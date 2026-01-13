@@ -671,3 +671,157 @@
           if(P[t] === name || C[t] === name) return false;
         }
         return true;
+      }
+
+      function dfs(r){
+        if(r === N){
+          const s0=Start[0], s1=Start[1], sN1=Start[N-1], sN2=Start[N-2];
+          if(s0===sN1 || s0===sN2 || s1===sN1 || s1===s0) return false;
+          return true;
+        }
+
+        const prev1 = (r-1>=0) ? Start[r-1] : null;
+        const prev2 = (r-2>=0) ? Start[r-2] : null;
+
+        const cand = [];
+        for(const [name, rem] of remaining.entries()){
+          if(rem <= 0) continue;
+          if(name === prev1 || name === prev2) continue;
+          if(!okToStart(name, r)) continue;
+          cand.push(name);
+        }
+        shuffle(cand);
+
+        for(const name of cand){
+          Start[r] = name;
+          remaining.set(name, 0);
+
+          if(dfs(r+1)) return true;
+
+          remaining.set(name, 1);
+          Start[r] = null;
+        }
+        return false;
+      }
+
+      if(!dfs(0)) return null;
+
+      const M = new Array(N).fill(null);
+      const B1 = new Array(N).fill(null);
+      const B2 = new Array(N).fill(null);
+
+      for(let r=0; r<N; r++){
+        M[r] = Start[r];
+        B1[r] = Start[(r-1+N)%N];
+        B2[r] = Start[(r-2+N)%N];
+
+        if(new Set([P[r], C[r], M[r], B1[r], B2[r]]).size !== 5) return null;
+      }
+      return {M,B1,B2};
+    }
+
+    function solveAll(N, players, useMargin){
+      const pBlocks = players.filter(p=> p.pLen>0).map(p=>({name:p.name, len:p.pLen}));
+      const cBlocks = players.filter(p=> p.cLen>0).map(p=>({name:p.name, len:p.cLen}));
+
+      const P = placeBlocksLinear(N, pBlocks, null);
+      if(!P) return null;
+
+      const C = placeBlocksLinear(N, cBlocks, (name,t)=> P[t]===name);
+      if(!C) return null;
+
+      const banned = buildBanned(N, players, P, C, useMargin);
+
+      const hitters = players.filter(p => !p.pitchOnly); // 打撃する人 = 投手のみ以外
+      if(hitters.length !== N) return null;
+
+      const hit = solveStarts(N, hitters, P, C, banned);
+      if(!hit) return null;
+
+      return {P, C, ...hit};
+    }
+
+    function renderTable(result){
+      tbody.innerHTML = '';
+      const {P,C,M,B1,B2} = result;
+      const N = P.length;
+      for(let r=0; r<N; r++){
+        const tr = document.createElement('tr');
+        [r+1, P[r], C[r], M[r], B1[r], B2[r]].forEach(v => {
+          const td = document.createElement('td');
+          td.textContent = v || '';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+    }
+
+    function generateSchedule(){
+      clearMessage();
+      tbody.innerHTML = '';
+
+      const basePlayers = readPlayers();
+      const N = computeN(basePlayers);
+
+      updateStats();
+
+      if(N < 3){
+        setMessage('err', `打撃する人（投手のみ以外）が<b>3人以上</b>必要です。`);
+        return;
+      }
+
+      const names = basePlayers.map(p=>p.name);
+      if(!uniqCheck(names)){
+        setMessage('err', `同じ名前が複数あります。全員の名前を一意にしてください。`);
+        return;
+      }
+
+      let totalP=0, totalC=0;
+      basePlayers.forEach(p=>{ totalP += p.pLen; totalC += p.cLen; });
+
+      if(totalP !== N || totalC !== N){
+        setMessage('err',
+          `ローテ本数は<b>${N}</b>（打撃人数）です。<br>` +
+          `投手合計=<b>${totalP}</b> / 捕手合計=<b>${totalC}</b> なので、どちらも <b>${N}</b> に揃えてください。`
+        );
+        return;
+      }
+
+      let result = solveAll(N, basePlayers, true);
+      if(result){
+        setMessage('ok', `前後制約あり（投手・捕手の前後は打撃なし）で生成しました。気に入るまで再生成できます。`);
+        renderTable(result);
+        return;
+      }
+
+      result = solveAll(N, basePlayers, false);
+      if(result){
+        setMessage('info', `前後制約ありでは不可能だったため、その列のみ打撃なしに緩和して生成しました。気に入るまで再生成できます。`);
+        renderTable(result);
+        return;
+      }
+
+      setMessage('err', `条件を満たすローテが見つかりませんでした。P/Cの連続数や「投手のみ/打撃のみ」を調整してください。`);
+    }
+
+    // buttons
+    document.getElementById('addRowBtn').addEventListener('click', () => {
+      addPlayerRow('',0,0,false,false);
+      updateStats();
+    });
+    document.getElementById('demoBtn').addEventListener('click', loadDemo);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      playersDiv.innerHTML = '';
+      tbody.innerHTML = '';
+      clearMessage();
+      updateStats();
+    });
+    document.getElementById('generateBtn').addEventListener('click', generateSchedule);
+
+    // init
+    loadDemo();
+  });
+})();
+</script>
+</body>
+</html>
