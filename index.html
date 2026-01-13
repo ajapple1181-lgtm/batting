@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>打撃ローテ自動生成</title>
+  <style>
+    :root{
+      --bg0:#000714;
+      --bg1:#020817;
+      --border:rgba(148,163,253,.22);
+      --border2:rgba(56,189,248,.30);
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --muted2:#6b7280;
+      --accent:#38bdf8;
+      --accent2:#6366f1;
+      --shadow: 0 24px 80px rgba(0,0,0,.55);
+      --r-xl: 24px;
+      --r-md: 18px;
+      --r-sm: 14px;
+      --font: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Noto Sans JP", sans-serif;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      padding:22px 14px 30px;
+      font-family:var(--font);
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 8% 0%, rgba(99,102,241,.20), transparent 60%),
+        radial-gradient(900px 600px at 88% 10%, rgba(56,189,248,.18), transparent 62%),
+        radial-gradient(1200px 900px at 50% 110%, rgba(14,165,233,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      -webkit-font-smoothing: antialiased;
+      font-size: 13px;
+      position: relative;
+      overflow-x:hidden;
+    }
+
+    /* 背景ロゴ（同階層に gifu.png を置く） */
+    body::before{
+      content:"";
+      position: fixed;
+      inset: -8% -8%;
+      background: url("./gifu.png") center/contain no-repeat;
+      opacity: 0.09;
+      filter: drop-shadow(0 40px 120px rgba(0,0,0,.45));
+      transform: rotate(-6deg);
+      pointer-events:none;
+      z-index: 0;
+    }
+
+    .wrap{ max-width: 1220px; margin:0 auto; position:relative; z-index:1; }
+
+    .top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .brand h1{
+      margin:0;
+      font-size: 26px;
+      letter-spacing: .08em;
+      font-weight: 760;
+      line-height: 1.15;
+    }
+    .brand .sub{
+      margin-top:6px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.75;
+      max-width: 920px;
+    }
+
+    .badge{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(2,6,23,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .dot{
+      width:9px; height:9px; border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 0 4px rgba(56,189,248,.10);
+    }
+    .badge b{ color: var(--text); font-weight: 700; letter-spacing:.04em; }
+
+    .app{
+      display:grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 2.05fr);
+      gap: 18px;
+      padding: 18px;
+      border-radius: var(--r-xl);
+      border: 1px solid rgba(148,163,253,.25);
+      background:
+        linear-gradient(180deg, rgba(2,6,23,.78), rgba(2,6,23,.55)),
+        radial-gradient(circle at top left, rgba(56,189,248,.16), transparent 55%),
+        radial-gradient(circle at top right, rgba(99,102,241,.14), transparent 55%);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    @media (max-width: 900px){
+      .app{ grid-template-columns: 1fr; padding: 14px; }
+      .top{ flex-direction: column; align-items:flex-start; }
+    }
+
+    .card{
+      border-radius: var(--r-md);
+      border: 1px solid var(--border);
+      background: rgba(2,6,23,.60);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card-h{
+      padding: 12px 12px 10px;
+      border-bottom: 1px solid rgba(148,163,253,.14);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(56,189,248,.12), transparent 55%),
+        radial-gradient(circle at 90% 0%, rgba(99,102,241,.10), transparent 55%);
+    }
+    .title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #c7d2fe;
+      letter-spacing: .06em;
+    }
+    .icon{
+      width: 18px; height:18px;
+      display:grid; place-items:center;
+      border-radius: 8px;
+      border: 1px solid var(--border2);
+      color: var(--accent);
+      background: rgba(56,189,248,.06);
+      font-size: 10px;
+    }
+    .card-b{ padding: 10px 12px 12px; }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      margin: 6px 0 10px;
+    }
+    .btn{
+      padding: 10px 13px;
+      border-radius: 999px;
+      border: none;
+      cursor:pointer;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .04em;
+      color: #02101a;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 16px 40px rgba(56,189,248,.20);
+      transition: transform .16s ease, box-shadow .16s ease;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 22px 55px rgba(99,102,241,.24); }
+
+    .btn-o{
+      padding: 10px 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(56,189,248,.60);
+      background: rgba(2,6,23,.35);
+      color: var(--accent);
+      cursor:pointer;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .04em;
+      transition: background .16s ease, transform .16s ease, box-shadow .16s ease;
+      user-select:none;
+    }
+    .btn-o:hover{
+      background: rgba(2,6,23,.70);
+      transform: translateY(-1px);
+      box-shadow: 0 18px 45px rgba(0,0,0,.28);
+    }
+
+    .hint{
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.7;
+    }
+
+    /* 見出し + 合計（P/Cの下に合計を配置） */
+    .listHead{
+      display:grid;
+      grid-template-columns: minmax(0,2.2fr) .7fr .7fr .62fr .62fr 24px;
+      gap:8px;
+      align-items:center;
+      padding: 10px 10px 8px;
+      border-radius: var(--r-sm);
+      border: 1px solid rgba(148,163,253,.18);
+      background: rgba(2,6,23,.35);
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .06em;
+      margin: 10px 0 8px;
+    }
+    .hcell{ text-align:center; }
+    .hcell.left{ text-align:left; padding-left:2px; }
+
+    .listTotal{
+      display:grid;
+      grid-template-columns: minmax(0,2.2fr) .7fr .7fr .62fr .62fr 24px;
+      gap:8px;
+      align-items:center;
+      margin: -6px 0 10px;
+      padding: 0 10px 8px;
+      color: var(--muted2);
+      font-size: 10px;
+      letter-spacing: .04em;
+    }
+    .listTotal .tcell{ text-align:center; }
+    .listTotal .tcell.left{ text-align:left; padding-left:2px; }
+    .listTotal b{ color: var(--text); font-weight: 750; }
+
+    .row{
+      display:grid;
+      grid-template-columns: minmax(0,2.2fr) .7fr .7fr .62fr .62fr 24px;
+      gap:8px;
+      align-items:center;
+      margin-bottom: 8px;
+      padding: 10px;
+      border-radius: var(--r-sm);
+      border: 1px solid rgba(148,163,253,.16);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(56,189,248,.06), transparent 60%),
+        rgba(2,6,23,.32);
+    }
+
+    label{
+      display:block;
+      font-size: 9px;
+      color: var(--muted2);
+      margin-bottom: 4px;
+      letter-spacing: .05em;
+    }
+    input[type="text"], input[type="number"]{
+      width:100%;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,253,.20);
+      background: rgba(2,6,23,.80);
+      color: var(--text);
+      outline:none;
+      font-size: 11px;
+    }
+    .cell{ display:flex; flex-direction:column; justify-content:center; }
+
+    .checkCell{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,253,.16);
+      background: rgba(2,6,23,.70);
+    }
+    .checkCell input{
+      width: 16px;
+      height: 16px;
+      accent-color: #38bdf8;
+      cursor:pointer;
+    }
+    .del{
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,253,.22);
+      background: rgba(2,6,23,.40);
+      color: var(--muted);
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+    }
+    .del:hover{
+      border-color: rgba(239,68,68,.50);
+      background: rgba(127,29,29,.55);
+      color: #fecaca;
+    }
+
+    .msg{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,253,.18);
+      background: rgba(2,6,23,.45);
+      font-size: 11px;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+    .msg.ok{ border-color: rgba(34,197,94,.35); background: rgba(22,101,52,.35); color: #bbf7d0; }
+    .msg.info{ border-color: rgba(96,165,250,.35); background: rgba(30,64,175,.25); color: #dbeafe; }
+    .msg.err{ border-color: rgba(239,68,68,.35); background: rgba(127,29,29,.30); color: #fecaca; }
+    .msg b{ color: var(--text); font-weight: 750; }
+
+    .tableWrap{
+      max-height: 560px;
+      overflow:auto;
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,253,.16);
+      background: rgba(2,6,23,.35);
+    }
+    table{ width:100%; border-collapse: collapse; font-size: 11px; }
+    thead th{
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(2,6,23,.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(148,163,253,.18);
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .06em;
+      padding: 10px 8px;
+      text-align:center;
+      white-space:nowrap;
+    }
+    tbody td{
+      border-bottom: 1px solid rgba(148,163,253,.10);
+      padding: 10px 8px;
+      text-align:center;
+      white-space:nowrap;
+    }
+    tbody tr:nth-child(2n){ background: rgba(2,6,23,.25); }
+
+    .rules{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,253,.14);
+      background: rgba(2,6,23,.30);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+    .rules ul{ margin: 6px 0 0 16px; padding:0; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <h1>打撃ローテ自動生成</h1>
+        <div class="sub">
+          投手・捕手の連続起用と、打撃（マシン＋打者2人）を同時に計算します。<br>
+          ローテ本数は「投手のみ」以外（=打撃する人）の人数で自動決定します。<br>
+          生成 / 再生成を押すたびに、別解があれば違うローテが出ます。
+        </div>
+      </div>
+      <div class="badge"><span class="dot"></span>ローテ本数（打撃人数）: <b id="statNTop">-</b></div>
+    </div>
+
+    <div class="app">
+      <!-- 入力 -->
+      <div class="card">
+        <div class="card-h">
+          <div class="title"><span class="icon">P</span>メンバー & 条件</div>
+          <div class="controls" style="margin:0">
+            <button class="btn-o" id="addRowBtn">＋メンバー追加</button>
+            <button class="btn-o" id="demoBtn">★デモ読込</button>
+            <button class="btn-o" id="clearBtn">クリア</button>
+          </div>
+        </div>
+
+        <div class="card-b">
+          <div class="hint">
+            「投手のみ」は打撃に入らず、「打撃のみ」は投手・捕手に入りません。
+          </div>
+
+          <div class="listHead">
+            <div class="hcell left">名前</div>
+            <div class="hcell">P連続</div>
+            <div class="hcell">C連続</div>
+            <div class="hcell">投手のみ</div>
+            <div class="hcell">打撃のみ</div>
+            <div></div>
+          </div>
+
+          <!-- 合計はP/Cの下へ -->
+          <div class="listTotal">
+            <div class="tcell left">ローテ本数: <b id="statN">-</b></div>
+            <div class="tcell">合計 <b id="statP">-</b></div>
+            <div class="tcell">合計 <b id="statC">-</b></div>
+            <div></div><div></div><div></div>
+          </div>
+
+          <div id="players"></div>
+
+          <div class="controls" style="margin-top:12px">
+            <button class="btn" id="generateBtn">▶ 生成 / 再生成</button>
+          </div>
+
+          <div id="message"></div>
+        </div>
+      </div>
+
+      <!-- 出力 -->
+      <div class="card">
+        <div class="card-h">
+          <div class="title"><span class="icon">R</span>ローテ結果</div>
+        </div>
+        <div class="card-b">
+          <div class="tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>R</th><th>投手</th><th>捕手</th><th>マシン</th><th>打者1</th><th>打者2</th>
+                </tr>
+              </thead>
+              <tbody id="resultBody"></tbody>
+            </table>
+          </div>
+
+          <div class="rules">
+            <div>ルール</div>
+            <ul>
+              <li>各列：投手1 / 捕手1 / マシン1 / 打者2（同じ列で同一人物は不可）</li>
+              <li>投手・捕手は連続起用（P連続 / C連続）</li>
+              <li>打撃は斜め：マシン(r) → 打者1(r+1) → 打者2(r+2)（周回）</li>
+              <li>制約：投手・捕手の前後は打撃が入らない（不可能ならその列のみ打撃なしへ緩和）</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  window.addEventListener('DOMContentLoaded', () => {
+    const playersDiv = document.getElementById('players');
+    const msgDiv = document.getElementById('message');
+    const tbody = document.getElementById('resultBody');
+
+    const statNTop = document.getElementById('statNTop');
+    const statN = document.getElementById('statN');
+    const statP = document.getElementById('statP');
+    const statC = document.getElementById('statC');
+
+    window.addEventListener('error', (e) => {
+      setMessage('err', `JSエラー: ${e.message}`);
+    });
+
+    function setMessage(type, html){
+      msgDiv.innerHTML = `<div class="msg ${type}">${html}</div>`;
+    }
+    function clearMessage(){ msgDiv.innerHTML = ''; }
+
+    function shuffle(arr){
+      for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+      }
+      return arr;
+    }
+    function uniqCheck(names){ return new Set(names).size === names.length; }
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+
+    function addPlayerRow(name='', p=0, c=0, pitchOnly=false, batOnly=false){
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <div class="cell">
+          <label>名前</label>
+          <input type="text" class="name" value="${escapeHtml(name)}">
+        </div>
+        <div class="cell">
+          <label>P連続</label>
+          <input type="number" class="pLen" value="${p}" min="0" max="60">
+        </div>
+        <div class="cell">
+          <label>C連続</label>
+          <input type="number" class="cLen" value="${c}" min="0" max="60">
+        </div>
+        <div class="checkCell" title="投手のみ（打撃に入らない）">
+          <input type="checkbox" class="pitchOnly" ${pitchOnly ? 'checked':''}>
+        </div>
+        <div class="checkCell" title="打撃のみ（投手・捕手に入らない）">
+          <input type="checkbox" class="batOnly" ${batOnly ? 'checked':''}>
+        </div>
+        <button class="del" title="削除">✕</button>
+      `;
+
+      const nameEl = row.querySelector('.name');
+      const pLenEl = row.querySelector('.pLen');
+      const cLenEl = row.querySelector('.cLen');
+      const pitchOnlyEl = row.querySelector('.pitchOnly');
+      const batOnlyEl   = row.querySelector('.batOnly');
+
+      function applyToggles(){
+        if (pitchOnlyEl.checked && batOnlyEl.checked) batOnlyEl.checked = false;
+
+        if (pitchOnlyEl.checked){
+          cLenEl.value = 0;
+          cLenEl.disabled = true;
+          pLenEl.disabled = false;
+          batOnlyEl.disabled = true;
+        } else if (batOnlyEl.checked){
+          pLenEl.value = 0;
+          cLenEl.value = 0;
+          pLenEl.disabled = true;
+          cLenEl.disabled = true;
+          pitchOnlyEl.disabled = true;
+        } else {
+          pLenEl.disabled = false;
+          cLenEl.disabled = false;
+          pitchOnlyEl.disabled = false;
+          batOnlyEl.disabled = false;
+        }
+        updateStats();
+      }
+
+      pitchOnlyEl.addEventListener('change', applyToggles);
+      batOnlyEl.addEventListener('change', applyToggles);
+
+      row.querySelector('.del').addEventListener('click', () => {
+        row.remove();
+        updateStats();
+      });
+
+      nameEl.addEventListener('input', updateStats);
+      pLenEl.addEventListener('input', updateStats);
+      cLenEl.addEventListener('input', updateStats);
+
+      playersDiv.appendChild(row);
+      applyToggles();
+    }
+
+    function loadDemo(){
+      playersDiv.innerHTML = '';
+      addPlayerRow('森田',   0, 0, false, false);
+      addPlayerRow('林',     0, 0, false, false);
+      addPlayerRow('山田子', 0, 0, false, false);
+      addPlayerRow('祖父江', 0, 0, false, false);
+      addPlayerRow('川瀬',   0, 0, false, false);
+      addPlayerRow('今﨑',   0, 0, false, false);
+      addPlayerRow('浜上',   0, 0, false, false);
+      addPlayerRow('石本',   0, 0, false, false);
+      addPlayerRow('山田泰', 0, 0, false, false);
+      updateStats();
+      clearMessage();
+      tbody.innerHTML = '';
+    }
+
+    function readPlayers(){
+      const rows = playersDiv.querySelectorAll('.row');
+      const players = [];
+      rows.forEach(row => {
+        const name = row.querySelector('.name').value.trim();
+        if(!name) return;
+
+        const pLen = parseInt(row.querySelector('.pLen').value || '0', 10);
+        const cLen = parseInt(row.querySelector('.cLen').value || '0', 10);
+        const pitchOnly = row.querySelector('.pitchOnly').checked;
+        const batOnly = row.querySelector('.batOnly').checked;
+
+        players.push({name, pLen, cLen, pitchOnly, batOnly});
+      });
+      return players;
+    }
+
+    // ローテ本数 = 「投手のみ」以外（打撃人数）
+    function computeN(players){
+      return players.filter(p => !p.pitchOnly).length;
+    }
+
+    function updateStats(){
+      const players = readPlayers();
+      const N = computeN(players);
+
+      let totalP = 0, totalC = 0;
+      players.forEach(p => { totalP += p.pLen; totalC += p.cLen; });
+
+      statNTop.textContent = String(N);
+      statN.textContent = String(N);
+      statP.textContent = String(totalP);
+      statC.textContent = String(totalC);
+    }
+
+    /* ----- solver ----- */
+    function placeBlocksLinear(N, blocks, conflictCheck){
+      const arr = new Array(N).fill(null);
+      blocks.sort((a,b)=> b.len-a.len || (Math.random()-0.5));
+
+      function dfs(i){
+        if(i===blocks.length) return true;
+        const {name, len} = blocks[i];
+
+        const starts = [];
+        for(let s=0; s<=N-len; s++) starts.push(s);
+        shuffle(starts);
+
+        for(const start of starts){
+          let ok = true;
+          for(let t=start; t<start+len; t++){
+            if(arr[t] !== null){ ok=false; break; }
+            if(conflictCheck && conflictCheck(name, t)){ ok=false; break; }
+          }
+          if(!ok) continue;
+
+          for(let t=start; t<start+len; t++) arr[t] = name;
+          if(dfs(i+1)) return true;
+          for(let t=start; t<start+len; t++) arr[t] = null;
+        }
+        return false;
+      }
+
+      return dfs(0) ? arr : null;
+    }
+
+    function buildBanned(N, players, P, C, useMargin){
+      const banned = {};
+      players.forEach(pl => banned[pl.name] = new Set());
+
+      for(let r=0; r<N; r++){
+        const roles = [P[r], C[r]];
+        roles.forEach(name => {
+          if(!name) return;
+          if(useMargin){
+            for(let t=r-1; t<=r+1; t++){
+              if(t>=0 && t<N) banned[name].add(t);
+            }
+          } else {
+            banned[name].add(r);
+          }
+        });
+      }
+      return banned;
+    }
+
+    // ここがポイント：打撃人数 N なので、打撃する人は全員 Start を「1回ずつ」
+    function solveStarts(N, hitters, P, C, banned){
+      const remaining = new Map();
+      hitters.forEach(p => remaining.set(p.name, 1));
+
+      const Start = new Array(N).fill(null);
+
+      function okToStart(name, r){
+        for(let k=0; k<3; k++){
+          const t = (r+k) % N;
+          if(banned[name].has(t)) return false;
+          if(P[t] === name || C[t] === name) return false;
+        }
+        return true;
