@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>打撃ローテ自動生成</title>
+
   <style>
     :root{
+      color-scheme: dark;
       --bg0:#000714;
       --bg1:#020817;
       --border:rgba(148,163,253,.22);
@@ -29,8 +31,8 @@
       font-family:var(--font);
       color:var(--text);
       background:
-        radial-gradient(1200px 700px at 8% 0%, rgba(99,102,241,.20), transparent 60%),
-        radial-gradient(900px 600px at 88% 10%, rgba(56,189,248,.18), transparent 62%),
+        radial-gradient(1200px 700px at 8% 0%, rgba(99,102,241,.18), transparent 60%),
+        radial-gradient(900px 600px at 88% 10%, rgba(56,189,248,.16), transparent 62%),
         radial-gradient(1200px 900px at 50% 110%, rgba(14,165,233,.10), transparent 60%),
         linear-gradient(180deg, var(--bg1), var(--bg0));
       -webkit-font-smoothing: antialiased;
@@ -39,17 +41,17 @@
       overflow-x:hidden;
     }
 
-    /* 背景ロゴ（同階層に gifu.png を置く） */
+    /* 背景ロゴ：同階層に gifu.png を置く */
     body::before{
       content:"";
       position: fixed;
-      inset: -8% -8%;
+      inset: -10% -10%;
       background: url("./gifu.png") center/contain no-repeat;
-      opacity: 0.09;
-      filter: drop-shadow(0 40px 120px rgba(0,0,0,.45));
-      transform: rotate(-6deg);
+      opacity: 0.18;          /* 見えない問題を避けるため濃く */
       pointer-events:none;
-      z-index: 0;
+      z-index: -1;            /* かぶり防止 */
+      transform: rotate(-6deg);
+      filter: drop-shadow(0 40px 120px rgba(0,0,0,.45));
     }
 
     .wrap{ max-width: 1220px; margin:0 auto; position:relative; z-index:1; }
@@ -81,7 +83,7 @@
       padding:10px 12px;
       border-radius: 999px;
       border: 1px solid var(--border);
-      background: rgba(2,6,23,.55);
+      background: rgba(2,6,23,.45);
       backdrop-filter: blur(10px);
       box-shadow: 0 10px 30px rgba(0,0,0,.25);
       font-size: 10px;
@@ -101,11 +103,12 @@
       gap: 18px;
       padding: 18px;
       border-radius: var(--r-xl);
-      border: 1px solid rgba(148,163,253,.25);
+      border: 1px solid rgba(148,163,253,.22);
+      /* 全体の濃さも少し薄くして背景を見せる */
       background:
-        linear-gradient(180deg, rgba(2,6,23,.78), rgba(2,6,23,.55)),
-        radial-gradient(circle at top left, rgba(56,189,248,.16), transparent 55%),
-        radial-gradient(circle at top right, rgba(99,102,241,.14), transparent 55%);
+        linear-gradient(180deg, rgba(2,6,23,.58), rgba(2,6,23,.35)),
+        radial-gradient(circle at top left, rgba(56,189,248,.12), transparent 55%),
+        radial-gradient(circle at top right, rgba(99,102,241,.10), transparent 55%);
       box-shadow: var(--shadow);
       backdrop-filter: blur(10px);
     }
@@ -117,10 +120,18 @@
     .card{
       border-radius: var(--r-md);
       border: 1px solid var(--border);
-      background: rgba(2,6,23,.60);
+      background: rgba(2,6,23,.45);
       backdrop-filter: blur(10px);
       overflow:hidden;
     }
+
+    /* ここが要望：メンバー&条件あたりを透明寄りに */
+    .card.members{
+      background: rgba(2,6,23,.14);
+      border-color: rgba(148,163,253,.18);
+      backdrop-filter: blur(6px);
+    }
+
     .card-h{
       padding: 12px 12px 10px;
       border-bottom: 1px solid rgba(148,163,253,.14);
@@ -129,8 +140,8 @@
       justify-content:space-between;
       gap:12px;
       background:
-        radial-gradient(circle at 10% 0%, rgba(56,189,248,.12), transparent 55%),
-        radial-gradient(circle at 90% 0%, rgba(99,102,241,.10), transparent 55%);
+        radial-gradient(circle at 10% 0%, rgba(56,189,248,.10), transparent 55%),
+        radial-gradient(circle at 90% 0%, rgba(99,102,241,.08), transparent 55%);
     }
     .title{
       display:flex;
@@ -182,7 +193,7 @@
       padding: 10px 13px;
       border-radius: 999px;
       border: 1px solid rgba(56,189,248,.60);
-      background: rgba(2,6,23,.35);
+      background: rgba(2,6,23,.28);
       color: var(--accent);
       cursor:pointer;
       font-size: 11px;
@@ -192,7 +203,7 @@
       user-select:none;
     }
     .btn-o:hover{
-      background: rgba(2,6,23,.70);
+      background: rgba(2,6,23,.55);
       transform: translateY(-1px);
       box-shadow: 0 18px 45px rgba(0,0,0,.28);
     }
@@ -204,16 +215,16 @@
       line-height: 1.7;
     }
 
-    /* 見出し + 合計（P/Cの下に合計を配置） */
+    /* 見出し + 合計 */
     .listHead{
       display:grid;
-      grid-template-columns: minmax(0,2.2fr) .7fr .7fr .62fr .62fr 24px;
+      grid-template-columns: minmax(0,2.2fr) .7fr .7fr .72fr 24px;
       gap:8px;
       align-items:center;
       padding: 10px 10px 8px;
       border-radius: var(--r-sm);
-      border: 1px solid rgba(148,163,253,.18);
-      background: rgba(2,6,23,.35);
+      border: 1px solid rgba(148,163,253,.16);
+      background: rgba(2,6,23,.16);   /* 透明寄り */
       color: var(--muted);
       font-size: 10px;
       letter-spacing: .06em;
@@ -224,7 +235,7 @@
 
     .listTotal{
       display:grid;
-      grid-template-columns: minmax(0,2.2fr) .7fr .7fr .62fr .62fr 24px;
+      grid-template-columns: minmax(0,2.2fr) .7fr .7fr .72fr 24px;
       gap:8px;
       align-items:center;
       margin: -6px 0 10px;
@@ -239,16 +250,14 @@
 
     .row{
       display:grid;
-      grid-template-columns: minmax(0,2.2fr) .7fr .7fr .62fr .62fr 24px;
+      grid-template-columns: minmax(0,2.2fr) .7fr .7fr .72fr 24px;
       gap:8px;
       align-items:center;
       margin-bottom: 8px;
       padding: 10px;
       border-radius: var(--r-sm);
-      border: 1px solid rgba(148,163,253,.16);
-      background:
-        radial-gradient(circle at 20% 0%, rgba(56,189,248,.06), transparent 60%),
-        rgba(2,6,23,.32);
+      border: 1px solid rgba(148,163,253,.14);
+      background: rgba(2,6,23,.12);   /* 透明寄り */
     }
 
     label{
@@ -258,16 +267,27 @@
       margin-bottom: 4px;
       letter-spacing: .05em;
     }
+
     input[type="text"], input[type="number"]{
       width:100%;
       padding: 9px 10px;
       border-radius: 12px;
       border: 1px solid rgba(148,163,253,.20);
-      background: rgba(2,6,23,.80);
-      color: var(--text);
+      background: rgba(2,6,23,.65);
+      color: var(--text) !important;
+      -webkit-text-fill-color: var(--text) !important;
+      caret-color: var(--text) !important;
       outline:none;
       font-size: 11px;
+      opacity: 1 !important;
     }
+
+    /* iOSのオートフィルで文字色が死ぬのを防ぐ */
+    input:-webkit-autofill{
+      -webkit-text-fill-color: var(--text) !important;
+      box-shadow: 0 0 0px 1000px rgba(2,6,23,.65) inset !important;
+    }
+
     .cell{ display:flex; flex-direction:column; justify-content:center; }
 
     .checkCell{
@@ -276,8 +296,8 @@
       align-items:center;
       height: 42px;
       border-radius: 12px;
-      border: 1px solid rgba(148,163,253,.16);
-      background: rgba(2,6,23,.70);
+      border: 1px solid rgba(148,163,253,.14);
+      background: rgba(2,6,23,.18);   /* 透明寄り */
     }
     .checkCell input{
       width: 16px;
@@ -285,12 +305,13 @@
       accent-color: #38bdf8;
       cursor:pointer;
     }
+
     .del{
       width: 24px;
       height: 24px;
       border-radius: 999px;
       border: 1px solid rgba(148,163,253,.22);
-      background: rgba(2,6,23,.40);
+      background: rgba(2,6,23,.25);
       color: var(--muted);
       cursor:pointer;
       display:grid;
@@ -307,14 +328,14 @@
       padding: 10px 12px;
       border-radius: 14px;
       border: 1px solid rgba(148,163,253,.18);
-      background: rgba(2,6,23,.45);
+      background: rgba(2,6,23,.35);
       font-size: 11px;
       line-height: 1.7;
       color: var(--muted);
     }
-    .msg.ok{ border-color: rgba(34,197,94,.35); background: rgba(22,101,52,.35); color: #bbf7d0; }
-    .msg.info{ border-color: rgba(96,165,250,.35); background: rgba(30,64,175,.25); color: #dbeafe; }
-    .msg.err{ border-color: rgba(239,68,68,.35); background: rgba(127,29,29,.30); color: #fecaca; }
+    .msg.ok{ border-color: rgba(34,197,94,.35); background: rgba(22,101,52,.25); color: #bbf7d0; }
+    .msg.info{ border-color: rgba(96,165,250,.35); background: rgba(30,64,175,.18); color: #dbeafe; }
+    .msg.err{ border-color: rgba(239,68,68,.35); background: rgba(127,29,29,.18); color: #fecaca; }
     .msg b{ color: var(--text); font-weight: 750; }
 
     .tableWrap{
@@ -322,14 +343,14 @@
       overflow:auto;
       border-radius: 16px;
       border: 1px solid rgba(148,163,253,.16);
-      background: rgba(2,6,23,.35);
+      background: rgba(2,6,23,.30);
     }
     table{ width:100%; border-collapse: collapse; font-size: 11px; }
     thead th{
       position: sticky;
       top: 0;
       z-index: 2;
-      background: rgba(2,6,23,.92);
+      background: rgba(2,6,23,.88);
       backdrop-filter: blur(8px);
       border-bottom: 1px solid rgba(148,163,253,.18);
       color: var(--muted);
@@ -345,14 +366,14 @@
       text-align:center;
       white-space:nowrap;
     }
-    tbody tr:nth-child(2n){ background: rgba(2,6,23,.25); }
+    tbody tr:nth-child(2n){ background: rgba(2,6,23,.22); }
 
     .rules{
       margin-top: 10px;
       padding: 10px 12px;
       border-radius: 14px;
       border: 1px solid rgba(148,163,253,.14);
-      background: rgba(2,6,23,.30);
+      background: rgba(2,6,23,.28);
       color: var(--muted);
       font-size: 10px;
       line-height: 1.8;
@@ -377,7 +398,7 @@
 
     <div class="app">
       <!-- 入力 -->
-      <div class="card">
+      <div class="card members" id="membersCard">
         <div class="card-h">
           <div class="title"><span class="icon">P</span>メンバー & 条件</div>
           <div class="controls" style="margin:0">
@@ -389,7 +410,7 @@
 
         <div class="card-b">
           <div class="hint">
-            「投手のみ」は打撃に入らず、「打撃のみ」は投手・捕手に入りません。
+            「投手のみ」は打撃に入りません。投手・捕手に入れない人は P連続 / C連続 を 0 にしてください。
           </div>
 
           <div class="listHead">
@@ -397,16 +418,14 @@
             <div class="hcell">P連続</div>
             <div class="hcell">C連続</div>
             <div class="hcell">投手のみ</div>
-            <div class="hcell">打撃のみ</div>
             <div></div>
           </div>
 
-          <!-- 合計はP/Cの下へ -->
           <div class="listTotal">
             <div class="tcell left">ローテ本数: <b id="statN">-</b></div>
             <div class="tcell">合計 <b id="statP">-</b></div>
             <div class="tcell">合計 <b id="statC">-</b></div>
-            <div></div><div></div><div></div>
+            <div></div><div></div>
           </div>
 
           <div id="players"></div>
@@ -442,7 +461,7 @@
               <li>各列：投手1 / 捕手1 / マシン1 / 打者2（同じ列で同一人物は不可）</li>
               <li>投手・捕手は連続起用（P連続 / C連続）</li>
               <li>打撃は斜め：マシン(r) → 打者1(r+1) → 打者2(r+2)（周回）</li>
-              <li>制約：投手・捕手の前後は打撃が入らない（不可能ならその列のみ打撃なしへ緩和）</li>
+              <li>制約：投手・捕手の前後は打撃が入らない（不可能ならその列のみ緩和）</li>
             </ul>
           </div>
         </div>
@@ -485,7 +504,7 @@
       }[c]));
     }
 
-    function addPlayerRow(name='', p=0, c=0, pitchOnly=false, batOnly=false){
+    function addPlayerRow(name='', p=0, c=0, pitchOnly=false){
       const row = document.createElement('div');
       row.className = 'row';
       row.innerHTML = `
@@ -504,9 +523,6 @@
         <div class="checkCell" title="投手のみ（打撃に入らない）">
           <input type="checkbox" class="pitchOnly" ${pitchOnly ? 'checked':''}>
         </div>
-        <div class="checkCell" title="打撃のみ（投手・捕手に入らない）">
-          <input type="checkbox" class="batOnly" ${batOnly ? 'checked':''}>
-        </div>
         <button class="del" title="削除">✕</button>
       `;
 
@@ -514,33 +530,19 @@
       const pLenEl = row.querySelector('.pLen');
       const cLenEl = row.querySelector('.cLen');
       const pitchOnlyEl = row.querySelector('.pitchOnly');
-      const batOnlyEl   = row.querySelector('.batOnly');
 
       function applyToggles(){
-        if (pitchOnlyEl.checked && batOnlyEl.checked) batOnlyEl.checked = false;
-
         if (pitchOnlyEl.checked){
+          // 「投手のみ」＝捕手はやらない前提
           cLenEl.value = 0;
           cLenEl.disabled = true;
-          pLenEl.disabled = false;
-          batOnlyEl.disabled = true;
-        } else if (batOnlyEl.checked){
-          pLenEl.value = 0;
-          cLenEl.value = 0;
-          pLenEl.disabled = true;
-          cLenEl.disabled = true;
-          pitchOnlyEl.disabled = true;
         } else {
-          pLenEl.disabled = false;
           cLenEl.disabled = false;
-          pitchOnlyEl.disabled = false;
-          batOnlyEl.disabled = false;
         }
         updateStats();
       }
 
       pitchOnlyEl.addEventListener('change', applyToggles);
-      batOnlyEl.addEventListener('change', applyToggles);
 
       row.querySelector('.del').addEventListener('click', () => {
         row.remove();
@@ -557,15 +559,15 @@
 
     function loadDemo(){
       playersDiv.innerHTML = '';
-      addPlayerRow('森田',   0, 0, false, false);
-      addPlayerRow('林',     0, 0, false, false);
-      addPlayerRow('山田子', 0, 0, false, false);
-      addPlayerRow('祖父江', 0, 0, false, false);
-      addPlayerRow('川瀬',   0, 0, false, false);
-      addPlayerRow('今﨑',   0, 0, false, false);
-      addPlayerRow('浜上',   0, 0, false, false);
-      addPlayerRow('石本',   0, 0, false, false);
-      addPlayerRow('山田泰', 0, 0, false, false);
+      addPlayerRow('森田',   0, 0, false);
+      addPlayerRow('林',     0, 0, false);
+      addPlayerRow('山田子', 0, 0, false);
+      addPlayerRow('祖父江', 0, 0, false);
+      addPlayerRow('川瀬',   0, 0, false);
+      addPlayerRow('今﨑',   0, 0, false);
+      addPlayerRow('浜上',   0, 0, false);
+      addPlayerRow('石本',   0, 0, false);
+      addPlayerRow('山田泰', 0, 0, false);
       updateStats();
       clearMessage();
       tbody.innerHTML = '';
@@ -581,14 +583,13 @@
         const pLen = parseInt(row.querySelector('.pLen').value || '0', 10);
         const cLen = parseInt(row.querySelector('.cLen').value || '0', 10);
         const pitchOnly = row.querySelector('.pitchOnly').checked;
-        const batOnly = row.querySelector('.batOnly').checked;
 
-        players.push({name, pLen, cLen, pitchOnly, batOnly});
+        players.push({name, pLen, cLen, pitchOnly});
       });
       return players;
     }
 
-    // ローテ本数 = 「投手のみ」以外（打撃人数）
+    // ローテ本数 = 「投手のみ」以外（打撃する人の数）
     function computeN(players){
       return players.filter(p => !p.pitchOnly).length;
     }
@@ -657,7 +658,7 @@
       return banned;
     }
 
-    // ここがポイント：打撃人数 N なので、打撃する人は全員 Start を「1回ずつ」
+    // 打撃人数 N なので、打撃する人は全員 Start を「1回ずつ」
     function solveStarts(N, hitters, P, C, banned){
       const remaining = new Map();
       hitters.forEach(p => remaining.set(p.name, 1));
@@ -711,7 +712,7 @@
       const B2 = new Array(N).fill(null);
 
       for(let r=0; r<N; r++){
-        M[r] = Start[r];
+        M[r]  = Start[r];
         B1[r] = Start[(r-1+N)%N];
         B2[r] = Start[(r-2+N)%N];
 
@@ -732,7 +733,7 @@
 
       const banned = buildBanned(N, players, P, C, useMargin);
 
-      const hitters = players.filter(p => !p.pitchOnly); // 打撃する人 = 投手のみ以外
+      const hitters = players.filter(p => !p.pitchOnly);
       if(hitters.length !== N) return null;
 
       const hit = solveStarts(N, hitters, P, C, banned);
@@ -796,17 +797,17 @@
 
       result = solveAll(N, basePlayers, false);
       if(result){
-        setMessage('info', `前後制約ありでは不可能だったため、その列のみ打撃なしに緩和して生成しました。気に入るまで再生成できます。`);
+        setMessage('info', `前後制約ありでは不可能だったため、その列のみ緩和して生成しました。気に入るまで再生成できます。`);
         renderTable(result);
         return;
       }
 
-      setMessage('err', `条件を満たすローテが見つかりませんでした。P/Cの連続数や「投手のみ/打撃のみ」を調整してください。`);
+      setMessage('err', `条件を満たすローテが見つかりませんでした。P/Cの連続数や合計を調整してください。`);
     }
 
     // buttons
     document.getElementById('addRowBtn').addEventListener('click', () => {
-      addPlayerRow('',0,0,false,false);
+      addPlayerRow('',0,0,false);
       updateStats();
     });
     document.getElementById('demoBtn').addEventListener('click', loadDemo);
